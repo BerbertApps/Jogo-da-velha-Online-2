@@ -63,3 +63,9 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Resolve WorkManager crash on release builds (google_mobile_ads pulls an
+    // outdated androidx.work version that fails to create the WorkDatabase).
+    implementation("androidx.work:work-runtime:2.11.2")
+}
