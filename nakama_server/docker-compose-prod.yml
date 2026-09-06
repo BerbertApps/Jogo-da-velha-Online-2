@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: nakama
+      POSTGRES_USER: nakama
+      POSTGRES_PASSWORD: MinhaSenhaForte123!
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nakama"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  nakama:
+    image: heroiclabs/nakama:3.23.0
+    entrypoint:
+      - "/bin/sh"
+      - "-ecx"
+      - >
+        /nakama/nakama migrate up --database.address "nakama:MinhaSenhaForte123!@postgres:5432/nakama" &&
+        exec /nakama/nakama --name nakama --database.address "nakama:MinhaSenhaForte123!@postgres:5432/nakama"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:7349:7349"
+      - "127.0.0.1:7350:7350"
+      - "127.0.0.1:7351:7351"
+    volumes:
+      - ./modules/build:/nakama/data/modules
+
+volumes:
+  pgdata:

@@ -1,0 +1,20 @@
+{
+  "name": "jogodavelha-nakama",
+  "version": "1.0.0",
+  "description": "Tic-tac-toe match handler for Nakama",
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "nakama-runtime": "github:heroiclabs/nakama-common"
+  }
+}
