@@ -6,6 +6,21 @@ import '../theme.dart';
 import '../widgets.dart';
 import '../i18n/strings.dart';
 
+class _Challenge {
+  final String id;
+  final String labelKey;
+  final int target;
+  final int reward;
+  int Function(GameState s) current;
+
+  _Challenge(
+      {required this.id,
+      required this.labelKey,
+      required this.target,
+      required this.reward,
+      required this.current});
+}
+
 class ChallengesScreen extends StatefulWidget {
   const ChallengesScreen({super.key});
 
@@ -14,25 +29,76 @@ class ChallengesScreen extends StatefulWidget {
 }
 
 class _ChallengesScreenState extends State<ChallengesScreen> {
-  // Contagem regressiva para próximos desafios
-  int _seconds = 6 * 3600 + 45 * 60 + 12;
+  late Timer _timer;
+  Duration _untilMidnight = const Duration();
 
   @override
   void initState() {
     super.initState();
-    Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_seconds > 0 && mounted) {
-        setState(() => _seconds--);
-      }
-    });
+    _computeMidnight();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
   }
 
-  String _fmt(int s) {
-    final h = (s ~/ 3600).toString().padLeft(2, '0');
-    final m = ((s % 3600) ~/ 60).toString().padLeft(2, '0');
-    final sec = (s % 60).toString().padLeft(2, '0');
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  void _computeMidnight() {
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    _untilMidnight = tomorrow.difference(now);
+  }
+
+  void _tick() {
+    if (!mounted) return;
+    final s = context.read<GameState>();
+    if (_untilMidnight.inSeconds <= 1) {
+      s.checkDailyReset();
+      _computeMidnight();
+    } else {
+      setState(() => _untilMidnight -= const Duration(seconds: 1));
+    }
+  }
+
+  String _fmt(Duration d) {
+    final h = d.inHours.toString().padLeft(2, '0');
+    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final sec = (d.inSeconds % 60).toString().padLeft(2, '0');
     return '$h:$m:$sec';
   }
+
+  List<_Challenge> _challenges() => [
+        _Challenge(
+          id: 'win2',
+          labelKey: 'win2matches',
+          target: 2,
+          reward: 20,
+          current: (s) => s.dailyWins,
+        ),
+        _Challenge(
+          id: 'win5',
+          labelKey: 'win5matches',
+          target: 5,
+          reward: 50,
+          current: (s) => s.dailyWins,
+        ),
+        _Challenge(
+          id: 'draw3',
+          labelKey: 'make3draws',
+          target: 3,
+          reward: 30,
+          current: (s) => s.dailyDraws,
+        ),
+        _Challenge(
+          id: 'online1',
+          labelKey: 'play1online',
+          target: 1,
+          reward: 20,
+          current: (s) => s.dailyOnlineGames,
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +115,8 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 ScreenHeader(title: L.t('dailyChallenges')),
                 const SizedBox(height: 16),
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                   decoration: BoxDecoration(
                     color: AppColors.bgCard,
                     borderRadius: BorderRadius.circular(14),
@@ -61,8 +128,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                       Icon(Icons.timer, color: AppColors.ciano, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        L.fmt('newChallengesIn',
-                            {'time': _fmt(_seconds)}),
+                        L.fmt('newChallengesIn', {'time': _fmt(_untilMidnight)}),
                         style: const TextStyle(
                           color: AppColors.ciano,
                           fontWeight: FontWeight.w700,
@@ -73,45 +139,45 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.diamond, color: AppColors.dourado, size: 20),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${s.diamonds}',
+                      style: const TextStyle(
+                        color: AppColors.dourado,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      L.t('myDiamonds'),
+                      style: const TextStyle(
+                        color: AppColors.textoClaro,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Expanded(
                   child: ListView(
                     physics: const BouncingScrollPhysics(),
-                    children: [
-                      _challengeTile(
-                        text: L.t('win2matches'),
-                        progress: '2/2',
-                        reward: '',
-                        claimed: true,
-                      ),
-                      const SizedBox(height: 12),
-                      _challengeTile(
-                        text: L.t('win5matches'),
-                        progress: '2/5',
-                        reward: L.fmt('diamonds', {'n': '+50'}),
-                      ),
-                      const SizedBox(height: 12),
-                      _challengeTile(
-                        text: L.t('make3draws'),
-                        progress: '1/3',
-                        reward: L.fmt('diamonds', {'n': '+30'}),
-                      ),
-                      const SizedBox(height: 12),
-                      _challengeTile(
-                        text: L.t('play1online'),
-                        progress: '0/1',
-                        reward: L.fmt('diamonds', {'n': '+20'}),
-                      ),
-                    ],
+                    children: _challenges().map((c) {
+                      final cur = c.current(s);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _challengeTile(s, c, cur),
+                      );
+                    }).toList(),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: NeonButton(
-                    L.t('redeemAll'),
-                    () {},
-                    startColor: AppColors.verde,
-                    endColor: AppColors.ciano,
-                  ),
+                  child: _redeemAllButton(context),
                 ),
               ],
             ),
@@ -121,16 +187,11 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     );
   }
 
-  Widget _challengeTile({
-    required String text,
-    required String progress,
-    required String reward,
-    bool claimed = false,
-  }) {
-    final parts = progress.split('/');
-    final cur = int.tryParse(parts[0]) ?? 0;
-    final total = int.tryParse(parts[1]) ?? 1;
-    final pct = (cur / total).clamp(0.0, 1.0);
+  Widget _challengeTile(GameState s, _Challenge c, int cur) {
+    final done = cur >= c.target;
+    final claimed = s.isChallengeClaimed(c.id);
+    final pct = (cur / c.target).clamp(0.0, 1.0);
+
     return NeonCard(
       Padding(
         padding: const EdgeInsets.all(16),
@@ -139,9 +200,11 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
           children: [
             Row(
               children: [
+                Icon(Icons.diamond, color: AppColors.dourado, size: 18),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    text,
+                    L.t(c.labelKey),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
@@ -149,60 +212,163 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     ),
                   ),
                 ),
-                if (claimed)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.verde.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.verde),
-                    ),
-                    child: Text(
-                      L.t('claim'),
-                      style: const TextStyle(
-                        color: AppColors.verde,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
-                      ),
-                    ),
-                  )
-                else
-                  Text(
-                    progress,
-                    style: const TextStyle(
-                      color: AppColors.ciano,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
               ],
             ),
             const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: pct,
-                minHeight: 6,
-                backgroundColor: AppColors.bgCard,
-                valueColor: AlwaysStoppedAnimation(
-                  claimed ? AppColors.verde : AppColors.ciano,
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: pct,
+                      minHeight: 6,
+                      backgroundColor: AppColors.bgCard,
+                      valueColor: AlwaysStoppedAnimation(
+                        claimed || done ? AppColors.verde : AppColors.ciano,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 42,
+                  child: Text(
+                    '$cur/${c.target}',
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(
+                      color: AppColors.textoClaro,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            if (reward.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                reward,
-                style: const TextStyle(
-                  color: AppColors.dourado,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  L.fmt('diamonds', {'n': '+${c.reward}'}),
+                  style: const TextStyle(
+                    color: AppColors.dourado,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
+                if (claimed)
+                  _statusChip(
+                    L.t('claimed'),
+                    Colors.grey,
+                    const Icon(Icons.check_circle, size: 15, color: Colors.grey),
+                  )
+                else if (done)
+                  _claimButton(
+                    L.fmt('claimReward', {'n': '${c.reward}'}),
+                    () => s.claimChallenge(c.id, c.reward),
+                  )
+                else
+                  const SizedBox.shrink(),
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _statusChip(String label, Color color, Widget icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          icon,
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _claimButton(String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.verde, AppColors.ciano],
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.workspace_premium, size: 15, color: Colors.white),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _redeemAllButton(BuildContext context) {
+    final s = context.read<GameState>();
+    var totalReward = 0;
+    var any = false;
+    for (final c in _challenges()) {
+      if (c.current(s) >= c.target && !s.isChallengeClaimed(c.id)) {
+        any = true;
+        totalReward += c.reward;
+      }
+    }
+    return NeonButton(
+      any
+          ? L.fmt('claimReward', {'n': '+$totalReward'})
+          : L.t('redeemAllDone'),
+      () {
+        if (!any) return;
+        for (final c in _challenges()) {
+          if (c.current(s) >= c.target && !s.isChallengeClaimed(c.id)) {
+            s.claimChallenge(c.id, c.reward);
+          }
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              L.fmt('claimReward', {'n': '+$totalReward'}),
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: AppColors.bgCard,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+      startColor: AppColors.verde,
+      endColor: AppColors.ciano,
     );
   }
 }

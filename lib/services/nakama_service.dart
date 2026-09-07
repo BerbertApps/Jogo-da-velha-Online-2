@@ -265,20 +265,27 @@ class NakamaService {
     print('Matchmaker matched! Match ID: $matchId');
     _currentMatchId = matchId;
 
-    // Deterministically decide who plays X (host) for quick matches.
+    // Deterministically decide who plays X (starts) for quick matches.
     // The server may order the participants differently for each client, so
-    // use a rule both players can agree on: the LOWEST user id is X/starts.
-    // (Same comparison runs on both devices → same result.)
-    final opponentId = event.users.isNotEmpty
-        ? event.users.first.presence?.userId
-        : null;
+    // never rely on "first user" (it can be self on both phones, making both
+    // clients wait for the opponent's turn). Rule both players can agree on:
+    // the LOWEST user id is X/starts. Same set of ids on both devices -> the
+    // result is complementary (exactly one client becomes the host).
     final myId = _session?.userId ?? '';
-    if (opponentId == null || opponentId.isEmpty) {
-      _quickMatchIsHost = true;
+    final ids = event.users
+        .map((u) => u.presence?.userId)
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    ids.add(myId);
+    if (ids.length >= 2) {
+      final smallest = ids.reduce((a, b) => a.compareTo(b) <= 0 ? a : b);
+      _quickMatchIsHost = myId.isNotEmpty && myId == smallest;
     } else {
-      _quickMatchIsHost = myId.compareTo(opponentId) < 0;
+      _quickMatchIsHost = true;
     }
-    print('Quick-match host role: $_quickMatchIsHost (me=$myId, opp=$opponentId)');
+    print(
+        'Quick-match host role: $_quickMatchIsHost (me=$myId, users=$ids)');
 
     // Join the matched game with the token from matchmaker
     _socket!.joinMatch(matchId, token: event.token).then((_) {

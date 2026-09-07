@@ -1,9 +1,11 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
+import '../models/player_record.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import '../i18n/strings.dart';
+import 'profile_screen.dart';
 
 class ScoreScreen extends StatelessWidget {
   const ScoreScreen({super.key});
@@ -12,6 +14,13 @@ class ScoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<GameState>();
     L.lang = state.language;
+    final players = [...state.players]
+      ..sort((a, b) {
+        final byWins = b.wins.compareTo(a.wins);
+        if (byWins != 0) return byWins;
+        return b.diamonds.compareTo(a.diamonds);
+      });
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -20,9 +29,15 @@ class ScoreScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 12),
                   ScreenHeader(title: L.t('score')),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.center,
+                    child: _diamondsBadge(state.diamonds),
+                  ),
                   const SizedBox(height: 10),
                   Container(
                     height: 44,
@@ -55,18 +70,14 @@ class ScoreScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Expanded(
                     child: TabBarView(
                       children: [
-                        _rankingList(),
+                        _rankingList(context, state, players),
                         _friendsPlaceholder(),
                       ],
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: NeonButton(L.t('seeAll'), () {}),
                   ),
                 ],
               ),
@@ -77,91 +88,239 @@ class ScoreScreen extends StatelessWidget {
     );
   }
 
-  Widget _rankingList() {
-    final rows = [
-      ['1', 'Jogador Mestre', '1520', 'gold'],
-      ['2', 'XxDestroyerX', '1450', 'silver'],
-      ['3', 'O Gênio', '1380', 'bronze'],
-      ['4', L.t('you'), '1250', 'you'],
-      ['5', 'NeonPlayer', '1100', ''],
-      ['6', 'TicTacPro', '980', ''],
-      ['7', 'VelhaKing', '850', ''],
-    ];
-    return ListView.separated(
+  Widget _diamondsBadge(int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.dourado, Color(0xFFFFAA00)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.diamond, color: Color(0xFF3B2A00), size: 16),
+          const SizedBox(width: 6),
+          Text(
+            '$count',
+            style: const TextStyle(
+              color: Color(0xFF3B2A00),
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _rankingList(
+      BuildContext context, GameState state, List<PlayerRecord> players) {
+    return ListView(
       physics: const BouncingScrollPhysics(),
-      itemCount: rows.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, i) {
-        final r = rows[i];
-        final isYou = r[3] == 'you';
-        final medal = r[3];
-        return NeonCard(
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 34,
-                  child: medal == ''
-                      ? Text(
-                          r[0],
-                          style: const TextStyle(
-                            color: AppColors.textoClaro,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        )
-                      : _medalIcon(medal),
+      padding: const EdgeInsets.only(bottom: 12),
+      children: [
+        _profileCard(context, state),
+        const SizedBox(height: 14),
+        if (players.isEmpty)
+          Text(
+            L.t('noPlayers'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.textoClaro, height: 1.5),
+          )
+        else
+          for (var i = 0; i < players.length; i++) ...[
+            _rankingRow(players[i], i + 1),
+            const SizedBox(height: 8),
+          ],
+      ],
+    );
+  }
+
+  Widget _profileCard(BuildContext context, GameState state) {
+    return NeonCard(
+      InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+        ),
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.ciano, AppColors.roxo],
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    r[1],
+                child: Text(
+                  state.avatar,
+                  style: const TextStyle(fontSize: 30),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      state.playerName.isEmpty ? 'Jogador' : state.playerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        _statChip('${state.wins}', L.t('wins'), AppColors.verde),
+                        const SizedBox(width: 8),
+                        _statChip('${state.ties}', L.t('draws'), AppColors.ciano),
+                        const SizedBox(width: 8),
+                        _statChip('${state.losses}', L.t('losses'),
+                            AppColors.magenta),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.edit, color: AppColors.textoClaro, size: 18),
+            ],
+          ),
+        ),
+      ),
+      borderColor: AppColors.ciano,
+      highlighted: true,
+    );
+  }
+
+  Widget _statChip(String value, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.6)),
+      ),
+      child: Text(
+        '$value $label',
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  Widget _rankingRow(PlayerRecord p, int rank) {
+    final isYou = p.isSelf;
+    return NeonCard(
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 30,
+              child: rank <= 3
+                  ? _medalIcon(rank)
+                  : Text(
+                      '$rank',
+                      style: const TextStyle(
+                        color: AppColors.textoClaro,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.bgCard,
+                border: Border.all(color: AppColors.azulNeon, width: 1),
+              ),
+              child: Text(p.avatar, style: const TextStyle(fontSize: 20)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isYou ? '${p.name} (${L.t('you')})' : p.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: isYou ? AppColors.ciano : Colors.white,
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: isYou ? FontWeight.w900 : FontWeight.w600,
                       shadows: isYou
                           ? [Shadow(color: AppColors.ciano, blurRadius: 8)]
                           : null,
                     ),
                   ),
-                ),
-                Text(
-                  r[2],
-                  style: const TextStyle(
-                    color: AppColors.dourado,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                  const SizedBox(height: 2),
+                  Text(
+                    '${p.wins} ${L.t('wins')}  •  ${p.ties} ${L.t('draws')}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textoClaro,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          borderColor: isYou ? AppColors.ciano : AppColors.azulNeon,
-          highlighted: isYou,
-        );
-      },
+            const SizedBox(width: 8),
+            const Icon(Icons.diamond, color: AppColors.dourado, size: 15),
+            const SizedBox(width: 4),
+            Text(
+              '${p.diamonds}',
+              style: const TextStyle(
+                color: AppColors.dourado,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+      borderColor: isYou ? AppColors.ciano : AppColors.azulNeon,
+      highlighted: isYou,
     );
   }
 
-  Widget _medalIcon(String m) {
-    IconData icon;
+  Widget _medalIcon(int rank) {
     Color color;
-    switch (m) {
-      case 'gold':
-        icon = Icons.emoji_events;
+    switch (rank) {
+      case 1:
         color = AppColors.dourado;
         break;
-      case 'silver':
-        icon = Icons.emoji_events;
+      case 2:
         color = const Color(0xFFC0C0C0);
         break;
       default:
-        icon = Icons.emoji_events;
         color = const Color(0xFFCD7F32);
     }
-    return Icon(icon, color: color, size: 22);
+    return Icon(Icons.emoji_events, color: color, size: 20);
   }
 
   Widget _friendsPlaceholder() {

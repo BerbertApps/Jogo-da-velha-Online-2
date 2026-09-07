@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/ai.dart';
 import '../models/game_state.dart';
+import '../services/ad_service.dart';
 import '../theme.dart';
 import '../i18n/strings.dart';
 import 'game_widgets.dart';
@@ -114,6 +115,9 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _nextRound() {
+    AdService.instance.maybeShowInterstitial(
+      context.read<GameState>().totalGames,
+    );
     setState(() => _gameIndex++);
     _resetBoard();
   }
@@ -246,6 +250,9 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _goMenu() {
+    AdService.instance.maybeShowInterstitial(
+      context.read<GameState>().totalGames,
+    );
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const MenuScreen()),

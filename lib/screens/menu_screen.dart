@@ -7,8 +7,8 @@ import '../widgets/ad_banner.dart';
 import '../i18n/strings.dart';
 import 'difficulty_screen.dart';
 import 'game_mode_screen.dart';
+import 'profile_screen.dart';
 import 'score_screen.dart';
-import 'settings_screen.dart';
 import 'stats_screen.dart';
 
 class MenuScreen extends StatelessWidget {
@@ -79,7 +79,7 @@ class MenuScreen extends StatelessWidget {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const SettingsScreen()),
+                              builder: (_) => const ProfileScreen()),
                         ),
                       ),
                     ],

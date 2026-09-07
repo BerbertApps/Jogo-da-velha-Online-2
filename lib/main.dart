@@ -7,17 +7,22 @@ import 'screens/splash_screen.dart';
 import 'theme.dart';
 import 'i18n/strings.dart';
 import 'widgets/ad_banner.dart';
+import 'services/ad_service.dart';
+import 'services/bgm_manager.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final state = GameState();
+  await state.init();
   if (!kIsWeb) {
     try {
       MobileAds.instance.initialize();
     } catch (_) {}
+    AdService.instance.loadInterstitial();
   }
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => GameState(),
+    ChangeNotifierProvider.value(
+      value: state,
       child: const JogoDaVelhaApp(),
     ),
   );
@@ -58,6 +63,7 @@ class JogoDaVelhaApp extends StatelessWidget {
           top: false,
           child: Column(
             children: [
+              const _MusicSync(),
               Expanded(child: child!),
               const AdBanner(),
             ],
@@ -67,4 +73,29 @@ class JogoDaVelhaApp extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Mantém a música de fundo em sincronia com o toggle "Música".
+class _MusicSync extends StatefulWidget {
+  const _MusicSync();
+
+  @override
+  State<_MusicSync> createState() => _MusicSyncState();
+}
+
+class _MusicSyncState extends State<_MusicSync> {
+  bool? _last;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final s = context.watch<GameState>();
+    if (s.music != _last) {
+      _last = s.music;
+      BgmManager.instance.sync(s.music);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

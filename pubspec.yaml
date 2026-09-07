@@ -39,6 +39,7 @@ dependencies:
   provider: ^6.1.5+1
   nakama: ^1.4.0
   google_mobile_ads: ^9.1.0
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:

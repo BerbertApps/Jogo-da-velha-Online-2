@@ -445,6 +445,9 @@ class _OnlineScreenState extends State<OnlineScreen> {
   }
 
   Widget _buildOnlineCountChip() {
+    final text = _connected
+        ? L.fmt('onlinePlayers', {'n': '$_onlineCount'})
+        : L.t('connectingLobby');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -458,13 +461,9 @@ class _OnlineScreenState extends State<OnlineScreen> {
           const Icon(Icons.people, color: AppColors.ciano, size: 14),
           const SizedBox(width: 8),
           Text(
-            _onlineCount > 0
-                ? L.fmt('onlinePlayers', {'n': '$_onlineCount'})
-                : L.t('connectingLobby'),
+            text,
             style: TextStyle(
-              color: _onlineCount > 0
-                  ? AppColors.ciano
-                  : AppColors.textoClaro,
+              color: _connected ? AppColors.ciano : AppColors.textoClaro,
               fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 1,

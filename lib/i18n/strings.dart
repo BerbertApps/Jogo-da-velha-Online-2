@@ -152,6 +152,25 @@ class L {
     'enter': 'ENTRAR',
     'invalidCode': 'Código inválido.',
     'joinRoomError': 'Erro ao entrar na sala: ',
+    // --- Perfil ---
+    'profile': 'PERFIL',
+    'randomPhoto': 'FOTO ALEATÓRIA',
+    'savePhoto': 'SALVAR FOTO',
+    'photoSaved': 'Foto salva!',
+    'playerName': 'NOME DO JOGADOR',
+    'myDiamonds': 'MEUS DIAMANTES',
+    'editName': 'EDITAR NOME',
+    'save': 'SALVAR',
+    'fullSettings': 'MAIS CONFIGURAÇÕES',
+    // --- Desafios diários ---
+    'claimed': 'RESGATADO',
+    'completed': 'CONCLUÍDO',
+    'claimReward': 'RESGATAR +{n}',
+    'redeemAllDone': 'Nada para resgatar.',
+    'challengeStatus': '{cur}/{total}',
+    // --- Placar ---
+    'playersCount': 'JOGADORES',
+    'noPlayers': 'Nenhum jogador ainda.\nJogue uma partida para aparecer aqui!',
   };
 
   static const Map<String, String> _en = {
@@ -261,6 +280,25 @@ class L {
     'enter': 'ENTER',
     'invalidCode': 'Invalid code.',
     'joinRoomError': 'Error joining room: ',
+    // --- Profile ---
+    'profile': 'PROFILE',
+    'randomPhoto': 'RANDOM PHOTO',
+    'savePhoto': 'SAVE PHOTO',
+    'photoSaved': 'Photo saved!',
+    'playerName': 'PLAYER NAME',
+    'myDiamonds': 'MY DIAMONDS',
+    'editName': 'EDIT NAME',
+    'save': 'SAVE',
+    'fullSettings': 'MORE SETTINGS',
+    // --- Daily challenges ---
+    'claimed': 'CLAIMED',
+    'completed': 'COMPLETED',
+    'claimReward': 'REDEEM +{n}',
+    'redeemAllDone': 'Nothing to redeem.',
+    'challengeStatus': '{cur}/{total}',
+    // --- Score ---
+    'playersCount': 'PLAYERS',
+    'noPlayers': 'No players yet.\nPlay a match to appear here!',
   };
 
   static const Map<String, String> _es = {
@@ -370,6 +408,25 @@ class L {
     'enter': 'ENTRAR',
     'invalidCode': 'Código inválido.',
     'joinRoomError': 'Error al unirse a la sala: ',
+    // --- Perfil ---
+    'profile': 'PERFIL',
+    'randomPhoto': 'FOTO ALEATORIA',
+    'savePhoto': 'GUARDAR FOTO',
+    'photoSaved': '¡Foto guardada!',
+    'playerName': 'NOMBRE DEL JUGADOR',
+    'myDiamonds': 'MIS DIAMANTES',
+    'editName': 'EDITAR NOMBRE',
+    'save': 'GUARDAR',
+    'fullSettings': 'MÁS AJUSTES',
+    // --- Desafíos diarios ---
+    'claimed': 'RECLAMADO',
+    'completed': 'COMPLETADO',
+    'claimReward': 'CANJEAR +{n}',
+    'redeemAllDone': 'Nada que canjear.',
+    'challengeStatus': '{cur}/{total}',
+    // --- Marcador ---
+    'playersCount': 'JUGADORES',
+    'noPlayers': 'Aún no hay jugadores.\n¡Juega una partida para aparecer aquí!',
   };
 
   static const Map<String, String> _zh = {
@@ -478,5 +535,24 @@ class L {
     'enter': '进入',
     'invalidCode': '无效代码。',
     'joinRoomError': '加入房间错误：',
+    // --- 个人资料 ---
+    'profile': '个人资料',
+    'randomPhoto': '随机头像',
+    'savePhoto': '保存头像',
+    'photoSaved': '头像已保存！',
+    'playerName': '玩家名称',
+    'myDiamonds': '我的钻石',
+    'editName': '编辑名称',
+    'save': '保存',
+    'fullSettings': '更多设置',
+    // --- 每日挑战 ---
+    'claimed': '已领取',
+    'completed': '已完成',
+    'claimReward': '领取 +{n}',
+    'redeemAllDone': '没有可领取的。',
+    'challengeStatus': '{cur}/{total}',
+    // --- 记分牌 ---
+    'playersCount': '玩家',
+    'noPlayers': '还没有玩家。\n先玩一局吧！',
   };
 }

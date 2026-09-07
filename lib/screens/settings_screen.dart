@@ -34,6 +34,7 @@ class SettingsScreen extends StatelessWidget {
                         value: s.sound,
                         onChanged: (v) {
                           s.sound = v;
+                          s.saveSettings();
                           s.notifyListeners();
                         },
                       ),
@@ -45,6 +46,7 @@ class SettingsScreen extends StatelessWidget {
                         value: s.music,
                         onChanged: (v) {
                           s.music = v;
+                          s.saveSettings();
                           s.notifyListeners();
                         },
                       ),
@@ -56,6 +58,7 @@ class SettingsScreen extends StatelessWidget {
                         value: s.vibration,
                         onChanged: (v) {
                           s.vibration = v;
+                          s.saveSettings();
                           s.notifyListeners();
                         },
                       ),
@@ -215,6 +218,7 @@ class SettingsScreen extends StatelessWidget {
                   final idx = Themes.names.indexOf(name);
                   s.theme = name;
                   Themes.index = idx;
+                  s.saveSettings();
                   s.notifyListeners();
                   Navigator.pop(ctx);
                 },
@@ -254,6 +258,7 @@ class SettingsScreen extends StatelessWidget {
                     : null,
                 onTap: () {
                   s.language = o.code;
+                  s.saveSettings();
                   s.notifyListeners();
                   Navigator.pop(ctx);
                 },
@@ -314,15 +319,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              final s = context.read<GameState>();
-              s.playerScore = 0;
-              s.aiScore = 0;
-              s.ties = 0;
-              s.totalGames = 0;
-              s.wins = 0;
-              s.losses = 0;
-              s.dailyWins = 0;
-              s.notifyListeners();
+              context.read<GameState>().resetProgress();
               Navigator.pop(ctx);
             },
             child: Text(L.t('restore'),

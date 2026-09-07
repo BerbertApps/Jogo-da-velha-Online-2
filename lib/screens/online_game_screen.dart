@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
+import '../services/ad_service.dart';
 import '../services/nakama_service.dart';
 import '../theme.dart';
 import '../i18n/strings.dart';
@@ -43,6 +45,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   bool _opponentLeft = false;
   bool _waitingRematch = false;
   int _moveCount = 0;
+  bool _resultRecorded = false;
 
   /// 0-based index of the current game. Determines who plays X (starts).
   /// Game 0 (first): host starts. Game 1: guest starts. And so on, alternating.
@@ -59,6 +62,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   StreamSubscription<int>? _moveSubscription;
   StreamSubscription<bool>? _rematchSubscription;
   StreamSubscription<MatchEvent>? _matchEventSubscription;
+  final AudioPlayer _player = AudioPlayer();
 
   static const _winLines = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -87,6 +91,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     _isDraw = false;
     _winLine = null;
     _moveCount = 0;
+    _resultRecorded = false;
     _rematchSent = false;
     _opponentReady = false;
     _waitingRematch = false;
@@ -103,6 +108,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     _moveSubscription?.cancel();
     _rematchSubscription?.cancel();
     _matchEventSubscription?.cancel();
+    _player.dispose();
     _nakama.leaveMatch();
     super.dispose();
   }
@@ -174,7 +180,15 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     });
 
     _vibrate();
+    _playSfx('move');
     _nakama.sendMove(index);
+  }
+
+  void _playSfx(String asset) {
+    final s = context.read<GameState>();
+    if (!s.sound) return;
+    _player.stop();
+    _player.play(AssetSource(asset));
   }
 
   void _vibrate() {
@@ -193,8 +207,26 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       } else {
         _opponentScore++;
       }
+      _recordOutcome();
     } else if (_moveCount == 9) {
       _isDraw = true;
+      _recordOutcome();
+    }
+  }
+
+  /// Registra o resultado da partida online no placar e nos desafios.
+  void _recordOutcome() {
+    if (_resultRecorded) return;
+    _resultRecorded = true;
+    final s = context.read<GameState>();
+    s.recordOnlineMatch();
+    if (_winner == _mySymbol) {
+      s.recordWin();
+      s.addDiamonds(5);
+    } else if (_winner != null) {
+      s.recordLoss();
+    } else if (_isDraw) {
+      s.recordTie();
     }
   }
 
@@ -232,6 +264,9 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   void _playAgain() {
     if (_rematchSent) return;
     _rematchSent = true;
+    AdService.instance.maybeShowInterstitial(
+      context.read<GameState>().totalGames,
+    );
 
     // If the opponent already sent their ready (both tapped ready), start now.
     setState(() {
@@ -246,6 +281,9 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   void _goMenu() {
+    AdService.instance.maybeShowInterstitial(
+      context.read<GameState>().totalGames,
+    );
     _nakama.leaveMatch();
     Navigator.pushAndRemoveUntil(
       context,

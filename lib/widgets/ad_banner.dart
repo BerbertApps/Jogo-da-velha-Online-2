@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-/// AdMob banner unit ids (one per platform).
+/// AdMob ad unit ids (one per platform).
 class AdMob {
   static const androidAppId = 'ca-app-pub-5159129783355431~8716113245';
   static const iosAppId = 'ca-app-pub-5159129783355431~6593241731';
-  static const androidBanner = 'ca-app-pub-5159129783355431/7403031572';
-  static const iosBanner = 'ca-app-pub-5159129783355431/8037456396';
+  static const androidBanner = 'ca-app-pub-5159129783355431/3326507035';
+  static const iosBanner = 'ca-app-pub-5159129783355431/9445192821';
+  static const androidInterstitial = 'ca-app-pub-5159129783355431/3326507035';
+  static const iosInterstitial = 'ca-app-pub-5159129783355431/9445192821';
 }
 
 /// Places child above a persistent banner pinned to the bottom of the screen.
