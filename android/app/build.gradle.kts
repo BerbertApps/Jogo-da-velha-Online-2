@@ -6,10 +6,32 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Chave de assinatura do upload (upload key).
+// Prioridade: variaveis de ambiente (CI/Codemagic) > android/key.properties (local).
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
+}
+
+fun secret(envName: String, propertyName: String): String? =
+    System.getenv(envName)?.takeIf { it.isNotBlank() }
+        ?: keystoreProperties.getProperty(propertyName)?.takeIf { it.isNotBlank() }
+
+val storePasswordValue = secret("KEYSTORE_PASSWORD", "storePassword")
+val keyPasswordValue = secret("KEY_PASSWORD", "keyPassword")
+val keyAliasValue = secret("KEY_ALIAS", "keyAlias")
+val storeFileValue = secret("KEYSTORE_FILE", "storeFile")
+val hasReleaseSigning =
+    storePasswordValue != null && keyPasswordValue != null && keyAliasValue != null && storeFileValue != null
+
+if (!hasReleaseSigning) {
+    throw GradleException(
+        "Keystore de release nao encontrada. Defina android/key.properties (storePassword, keyPassword, " +
+            "keyAlias, storeFile) ou as variaveis de ambiente KEYSTORE_PASSWORD, KEY_PASSWORD, KEY_ALIAS e " +
+            "KEYSTORE_FILE. Sem isso o bundle seria assinado com a chave de debug e o Google Play recusaria " +
+            "a publicacao."
+    )
 }
 
 android {
@@ -39,10 +61,10 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
+            keyAlias = keyAliasValue
+            keyPassword = keyPasswordValue
+            storeFile = file(storeFileValue!!)
+            storePassword = storePasswordValue
         }
     }
 
